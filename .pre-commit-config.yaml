@@ -1,0 +1,18 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+      - id: flake8
+      - id: end-of-file-fixer
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.7.0
+    hooks:
+      - id: black
+  - repo: local
+    hooks:
+      - id: run-mypy
+        name: Run mypy
+        entry: make mypy
+        language: system
+        pass_filenames: false
