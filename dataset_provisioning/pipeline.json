@@ -1,0 +1,42 @@
+{
+    "name": "DatasetProvisioning",
+    "properties": {
+        "activities": [
+            {
+                "name": "DatasetProvisioning",
+                "type": "DatabricksSparkPython",
+                "typeProperties": {
+                    "pythonFile": "dbfs:/pipelines/dataset_provisioning/artifacts/dataset_provisioning.py",
+                    "parameters": [
+                        "--query_base64",
+                        "@pipeline().parameters.query_base64",
+                        "--dataset_name",
+                        "@pipeline().parameters.dataset_name",
+                        "--workspace_id",
+                        "@pipeline().parameters.workspace_id"
+                    ]
+                },
+                "linkedServiceName": {
+                    "referenceName": "ADBLinkedServiceViaMSI",
+                    "type": "LinkedServiceReference"
+                }
+            }
+        ],
+        "parameters": {
+            "query_base64": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "dataset_name": {
+                "type": "String",
+                "defaultValue": ""
+            },
+            "workspace_id": {
+                "type": "String",
+                "defaultValue": ""
+            }
+        },
+        "annotations": []
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
