@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: helloworld
+Version: 0.0.5
+Provides-Extra: build
+Requires-Dist: build==0.10.0; extra == "build"
+Provides-Extra: test
+Requires-Dist: opencensus-ext-azure==1.1.9; extra == "test"
+Requires-Dist: opencensus-ext-logging==0.1.1; extra == "test"
+Requires-Dist: pandas==1.5.3; extra == "test"
+Requires-Dist: pandas-stubs==1.5.3.230203; extra == "test"
+Requires-Dist: pyspark==3.3.1; extra == "test"
+Requires-Dist: pytest==7.2.1; extra == "test"
+Provides-Extra: lint
+Requires-Dist: mypy==1.0.0; extra == "lint"
