@@ -1,0 +1,18 @@
+# .env and config files
+.env
+*.env
+config.yaml
+
+# Mac specific metadata
+.DS_store
+
+# Python artifacts
+**/__pycache__/**
+**/*egg-info/**
+**/dist/**
+
+# vs code settings
+.vscode/
+
+# Artifacts
+**/artifacts/**
