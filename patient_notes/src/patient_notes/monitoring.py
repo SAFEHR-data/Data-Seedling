@@ -13,11 +13,11 @@
 #  limitations under the License.
 
 import logging
-import os
 from typing import Any
+import os
 
-from opencensus.ext.azure import metrics_exporter
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure import metrics_exporter
 from opencensus.stats import aggregation, stats
 from opencensus.stats.measure import MeasureFloat, MeasureInt
 from opencensus.stats.view import View
@@ -28,10 +28,10 @@ from opencensus.trace.tracer import Tracer
 
 
 # Must match the top-level name of the pipeline
-PIPELINE_NAME: str = "helloworld"
+PIPELINE_NAME: str = "patient_notes"
 
 
-def telemetry_processor_callback_function(envelope: Any) -> None:
+def _telemetry_processor_callback_function(envelope: Any) -> None:
     envelope.tags["ai.cloud.role"] = "databricks"
 
 
@@ -58,23 +58,25 @@ def initialize_logging(
     export_interval_seconds: float = 5.0,
     correlation_id: str | None = None,
 ) -> logging.LoggerAdapter:
-    """
-    Adds the Application Insights handler for the root logger and sets
+    """Adds the Application Insights handler for the root logger and sets
     the given logging level. Creates and returns a logger adapter that integrates
     the correlation ID, if given, to the log messages.
 
-    :param logging_level: The logging level to set e.g., logging.WARNING.
-    :param export_interval_seconds: How often the logs will be exported,
+    Args:
+        logging_level: The logging level to set e.g., logging.WARNING.
+        export_interval_seconds: How often the logs will be exported,
             the default is 5 seconds.
-    :param correlation_id: Optional. The correlation ID that is passed on
+        correlation_id: Optional. The correlation ID that is passed on
             to the operation_Id in App Insights.
-    :returns: A newly created logger adapter.
+
+    Returns:
+        logging.LoggerAdapter: A newly created logger adapter.
     """
     logger = logging.getLogger()
 
     try:
         azurelog_handler = AzureLogHandler(export_interval=export_interval_seconds)
-        azurelog_handler.add_telemetry_processor(telemetry_processor_callback_function)
+        azurelog_handler.add_telemetry_processor(_telemetry_processor_callback_function)
         azurelog_handler.addFilter(ExceptionTracebackFilter())
         logger.addHandler(azurelog_handler)
     except ValueError as e:
@@ -107,44 +109,30 @@ def create_and_send_metric(
     aggregation: type = aggregation.SumAggregation,
     export_interval_seconds: float = 5.0,
 ) -> None:
-    """
-    This method creates a metric measure, a corresponding View with columns and
+    """This method creates a metric measure, a corresponding View with columns and
     aggregations provided, registers it with the Azure metrics exporter, and sends
     the value of the metric. It initializes the exporter using the
     APPLICATIONINSIGHTS_CONNECTION_STRING env variable. If it isn't set, it will
-    print a warning and exit.
+    exit silently.
 
-    TODO
-    Note that creating a metric and view is an idempotent operation, so this method
-    can be called multiple times.
-
-    :param value: Value of the metric to send.
-    :type value: int, float
-    :param tags: Tags to be associated with the metric.
-    :type tags: dict
-    :param name: Name of the metric.
-    :type name: str
-    :param description: Description of the metric.
-    :type description: str
-    :param view_prefix: Prefix to use for the Metric view.
-    :type view_prefix: str
-    :param unit: Description of the unit, which must follow
+    Args:
+        value (int | float): Value of the metric to send.
+        tags (dict[str, str]): Tags to be associated with the metric.
+        name (str): Name of the metric.
+        description (str): Description of the metric.
+        view_prefix (str): Prefix to use for the Metric view.
+        unit (str): Description of the unit, which must follow
             https://unitsofmeasure.org/ucum.
-    :type unit: str
-    :param tag_keys: Tag keys to aggregate on for the view created.
-    :type tag_keys: list
-    :param metric_type: Type to use for the created metric, can be either
-            opencensus.stats.measure.MeasureInt or
-            opencensus.stats.measure.MeasureFloat.
-    :type metric_type: MeasureInt, MeasureFloat
-    :param aggregation: Type of aggregation as described in
+        tag_keys (list[str]): Tag keys to aggregate on for the view created.
+        metric_type (MeasureInt | MeasureFloat): Type to use for the created
+            metric, can be either:
+            (a) opencensus.stats.measure.MeasureInt
+            (b) opencensus.stats.measure.MeasureFloat.
+        aggregation (type): Type of aggregation as described in
             https://opencensus.io/stats/view/#aggregations.
-    :type aggregation: Aggregation
-    :param export_interval_seconds: How often the metrics will be exported,
+        export_interval_seconds (float): How often the metrics will be exported,
             the default is every 5 seconds.
-    :type export_interval_seconds: int
     """
-
     if "APPLICATIONINSIGHTS_CONNECTION_STRING" not in os.environ:
         logging.warning("APPLICATIONINSIGHTS_CONNECTION_STRING is not set, exiting")
         return

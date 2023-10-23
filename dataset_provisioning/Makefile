@@ -14,14 +14,16 @@ install-test: # Unused
 install-lint: # Unused
 	python3 -m pip install -e ".[lint]"
 
+test: # Unused
+
 mypy: ## Run mypy (see https://jaredkhan.com/blog/mypy-pre-commit on why it isn't run in pre-commit hook)
-	mypy "."
+	mypy "src"
 
 FORCE: ; 
 
 artifacts: FORCE  ## Gather artifacts for sending to Spark
 	mkdir -p artifacts
-	cp dataset_provisioning.py artifacts
+	cp src/dataset_provisioning.py artifacts
 
 clean: ## Clean all built objects
 	rm -rf artifacts

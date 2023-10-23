@@ -19,7 +19,7 @@ from pyspark.sql import DataFrame
 
 def example_transform(df: DataFrame) -> DataFrame:
     """
-    Example transformation 
+    Example transformation
 
     :param df: Input dataframe to be transformed
     :return: Transformed dataframe

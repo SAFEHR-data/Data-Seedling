@@ -1,0 +1,73 @@
+{
+    "name": "PatientNotesPipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "IngestionActivity",
+                "type": "DatabricksSparkPython",
+                "typeProperties": {
+                    "pythonFile": "dbfs:/pipelines/patient_notes/artifacts/ingestion.py",
+                    "libraries": [
+                        {
+                            "whl": "dbfs:/pipelines/patient_notes/artifacts/patient_notes-0.0.1-py3-none-any.whl"
+                        }
+                    ]
+                },
+                "linkedServiceName": {
+                    "referenceName": "ADBLinkedServiceViaMSI",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "PseudonymisationActivity",
+                "type": "DatabricksSparkPython",
+                "typeProperties": {
+                    "pythonFile": "dbfs:/pipelines/patient_notes/artifacts/pseudonymisation.py",
+                    "libraries": [
+                        {
+                            "whl": "dbfs:/pipelines/patient_notes/artifacts/patient_notes-0.0.1-py3-none-any.whl"
+                        }
+                    ]
+                },
+                "dependsOn": [
+                    {
+                        "activity": "IngestionActivity",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "linkedServiceName": {
+                    "referenceName": "ADBLinkedServiceViaMSI",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "FeatureExtractionActivity",
+                "type": "DatabricksSparkPython",
+                "dependsOn": [
+                    {
+                        "activity": "PseudonymisationActivity",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "typeProperties": {
+                    "pythonFile": "dbfs:/pipelines/patient_notes/artifacts/feature_extraction.py",
+                    "libraries": [
+                        {
+                            "whl": "dbfs:/pipelines/patient_notes/artifacts/patient_notes-0.0.1-py3-none-any.whl"
+                        }
+                    ]
+                },
+                "linkedServiceName": {
+                    "referenceName": "ADBLinkedServiceViaMSI",
+                    "type": "LinkedServiceReference"
+                }
+            }
+        ],
+        "parameters": {}
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}

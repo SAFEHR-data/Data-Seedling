@@ -37,8 +37,8 @@ class DatabaseConfiguration:
         Username to use to connect, e.g. admin
     password: str
         Password to use to connect
-
     """
+
     host: str
     port: int
     database: str
@@ -49,8 +49,11 @@ class DatabaseConfiguration:
     def connection_string(self) -> str:
         """
         Constructs and returns a connection string from attributes.
+
+        Returns:
+            str: URL for database server connection.
         """
-        pass
+        raise NotImplementedError()
 
 
 @dataclass
@@ -63,15 +66,15 @@ class SqlServerConfiguration(DatabaseConfiguration):
         Whether to use Service Principal based auth.
         If set to true, pass in App ID as the `user` attribute,
         and App Secret as `password` attribute.
-        TODO
     """
+
     use_aad_service_principal: bool = False
 
     def connection_string(self) -> str:
         """
         Constructs and returns a connection string from attributes.
         """
-        connection_string =  (
+        connection_string = (
             f"jdbc:sqlserver://{self.host}:{self.port};"
             f"database={self.database};"
             "encrypt=true;"
@@ -85,16 +88,23 @@ class SqlServerConfiguration(DatabaseConfiguration):
 
 def feature_store_config(spark: SparkSession) -> DatabaseConfiguration:
     """
-    :returns: A DatabaseConfiguration object that can be used 
+    :returns: A DatabaseConfiguration object that can be used
         in `save_feature_store_table` to write to Feature Store.
     """
+    host = spark.conf.get("spark.secret.feature-store-fqdn")
+    database = spark.conf.get("spark.secret.feature-store-database")
+    user = spark.conf.get("spark.secret.feature-store-app-id")
+    password = spark.conf.get("spark.secret.feature-store-app-secret")
+    if not host or not database or not user or not password:
+        raise ValueError("Secrets for Feature store configuation must be set")
+
     return SqlServerConfiguration(
-        host=spark.conf.get("spark.secret.feature-store-fqdn"),
+        host=host,
         port=1433,
-        database=spark.conf.get("spark.secret.feature-store-database"),
-        user=spark.conf.get("spark.secret.feature-store-app-id"),
-        password=spark.conf.get("spark.secret.feature-store-app-secret"),
-        use_aad_service_principal=True
+        database=database,
+        user=user,
+        password=password,
+        use_aad_service_principal=True,
     )
 
 
@@ -105,11 +115,11 @@ def save_feature_store_table(
     Saves df as a table under table_name in Feature Store.
     It also increments metric for number of rows_inserted which can be observed on a dashboard
     (see README.md)
-    
+
     :param config: Config object of type DatabaseConfiguration
     :param df: PySpark DataFrame to save
     :param table_name: Table name to save the table (note that database name comes from config)
-    
+
     """
     # This exact metric name expected by FlowEHR in order to create dashboards automatically
     METRIC_NAME = "rows_inserted"

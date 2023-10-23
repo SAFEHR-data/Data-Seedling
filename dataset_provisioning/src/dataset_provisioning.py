@@ -6,7 +6,8 @@ from typing import Any
 from pyspark.sql.session import SparkSession
 
 
-# These constants need to be set accordingly to the TRE Workspace template used (see README.md)
+# These constants need to be set accordingly to the TRE Workspace template used
+# (see README.md)
 DEFAULT_CONTAINER_NAME = "datalake"
 DEFAULT_STORAGE_ACCOUNT_PREFIX = "stgws"
 
@@ -21,7 +22,10 @@ def parse_args() -> Any:
     parser.add_argument(
         "--query_base64",
         type=str,
-        help="Query to run for dataset extraction, encoded in base64. Example of a query: \"SELECT * from catalog.schema.table\"",
+        help=(
+            "Query to run for dataset extraction, encoded in base64."
+            'Example of a query: "SELECT * from catalog.schema.table"'
+        ),
     )
     parser.add_argument(
         "--dataset_name",
@@ -48,9 +52,13 @@ def set_up_auth_for_storage_account(spark: SparkSession, storage_account: str) -
     app_id = spark.conf.get("spark.secret.external-connection-app-id")
     app_secret = spark.conf.get("spark.secret.exernal-connection-app-secret")
 
-    spark.conf.set(
-        f"fs.azure.account.auth.type.{storage_account}.dfs.core.windows.net", "OAuth"
-    )
+    if not app_id or not app_secret:
+        raise ValueError(
+            "external-connection-app-id and exernal-connection-app-secret secrets"
+            "must be set on the cluster"
+        )
+
+    spark.conf.set(f"fs.azure.account.auth.type.{storage_account}.dfs.core.windows.net", "OAuth")
     spark.conf.set(
         f"fs.azure.account.oauth.provider.type.{storage_account}.dfs.core.windows.net",
         "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
@@ -71,7 +79,8 @@ def set_up_auth_for_storage_account(spark: SparkSession, storage_account: str) -
 
 def get_storage_for_workspace(workspace_id: str) -> str:
     """
-    Using a naming convention, returns the expected name of the storage account in the TRE Workspace.
+    Using a naming convention, returns the expected name of the storage account
+    in the TRE Workspace.
 
     :param workspace_id: A Workspace ID (GUID)
 
@@ -98,5 +107,6 @@ if __name__ == "__main__":
     str_now = now.strftime("%Y-%m-%d-%H-%M-%S")
 
     df.write.format("parquet").mode("overwrite").save(
-        f"abfss://{DEFAULT_CONTAINER_NAME}@{workspace_storage}.dfs.core.windows.net/{args.dataset_name}/{str_now}"
+        f"abfss://{DEFAULT_CONTAINER_NAME}@{workspace_storage}"
+        f".dfs.core.windows.net/{args.dataset_name}/{str_now}"
     )

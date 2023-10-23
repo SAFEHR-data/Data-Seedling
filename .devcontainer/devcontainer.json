@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-    "name": "M-RIC Data Pipelines",
+    "name": "Data Seedling",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
     "image": "mcr.microsoft.com/devcontainers/python:0-3.10",
 
@@ -43,15 +43,9 @@
         4040
     ],
 
-    // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    // "forwardPorts": [],
-
     "onCreateCommand": "make install-all",
 
-    "postCreateCommand": "pre-commit install"
-
-    // Configure tool-specific properties.
-    // "customizations": {},
+    "postCreateCommand": "git config --global --add safe.directory /workspaces/Data-Seedling && pre-commit install"
 
     // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
     // "remoteUser": "root"

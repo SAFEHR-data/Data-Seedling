@@ -16,15 +16,14 @@ from pyspark.sql import SparkSession
 
 from helloworld.transform import example_transform
 
+
 # This example test shows how any Spark transformation can be tested using spark_session fixture
 def test_example(spark: SparkSession) -> None:
     input_df = spark.createDataFrame([(1,), (2,), (3,), (2,), (3,)], ["value"])
 
     output_df = example_transform(input_df)
 
-    expected_df = spark.createDataFrame(
-        [(1, 1), (2, 2), (3, 2)], ["value", "count"]
-    )
+    expected_df = spark.createDataFrame([(1, 1), (2, 2), (3, 2)], ["value", "count"])
 
     assert set(expected_df.columns) == set(output_df.columns)
     assert expected_df.collect() == output_df.collect()
