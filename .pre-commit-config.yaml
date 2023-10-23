@@ -13,6 +13,11 @@ repos:
         args: ["--line-length", "99", "--preview"]
   - repo: local
     hooks:
+      - id: check-headers-exist
+        name: Ensure copyright and license headers are present
+        entry: .github/linters/check_headers_exist.sh
+        language: script
+        pass_filenames: false
       - id: run-mypy
         name: Run mypy
         entry: make mypy
