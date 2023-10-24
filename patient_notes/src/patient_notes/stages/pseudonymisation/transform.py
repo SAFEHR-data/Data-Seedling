@@ -114,28 +114,28 @@ def round_datetime_columns(
     return df
 
 
-def hash_client_id(df: DataFrame, columns: list[str], table_name: str) -> DataFrame:
-    """Hashes the specified columns containing client IDs in the DataFrame.
+def hash_hashable_id(df: DataFrame, columns: list[str], table_name: str) -> DataFrame:
+    """Hashes the specified columns containing IDs in the DataFrame.
 
     Reference:
         https://github.com/M-RIC-TRE/data-pipelines/blob/main/main_pipeline.py
 
     Args:
-        df (DataFrame): The DataFrame containing clientIDs to be hashed.
+        df (DataFrame): The DataFrame containing IDs to be hashed.
         columns (list[str]): List of column names in the DataFrame.
         table_name (str): Name of the table being processed.
 
     Returns:
-        DataFrame: A new DataFrame with hashed client IDs.
+        DataFrame: A new DataFrame with hashed IDs.
 
     Raises:
         KeyError: If a column specified in 'columns' does not exist in the DataFrame.
     """
     for column in columns:
         if column in df.columns:
-            logging.info(f"Hashing clientID column: {column} in table: {table_name}")
+            logging.info(f"Hashing hashable ID column: {column} in table: {table_name}")
 
-            # Merge ClientID with HASH_SALT (salting procedure)
+            # Merge hashable ID with HASH_SALT (salting procedure)
             df = df.withColumn(column, concat(df[column], lit(HASH_SALT)))
             # Compute hash value
             df = df.withColumn(
@@ -186,8 +186,8 @@ def pseudo_transform(
                 df = round_datetime_columns(df, columns, DateTimeRoundOpt.HOUR, table_name)
             case ColumnType.DATE:
                 df = round_datetime_columns(df, columns, DateTimeRoundOpt.MONTH, table_name)
-            case ColumnType.CLIENT_ID:
-                df = hash_client_id(df, columns, table_name)
+            case ColumnType.HASHABLE_ID:
+                df = hash_hashable_id(df, columns, table_name)
             case _:
                 # TODO: Implement additional column types (if needed).
                 logging.warning(f"Unsupported column type: {column_type}. Skipping.")

@@ -22,7 +22,7 @@ class ColumnType(Enum):
 
     FREE_TEXT = "free_text"
     OTHER_IDENTIFIABLE = "other_identifiable"
-    CLIENT_ID = "client_id"
+    HASHABLE_ID = "hashable_id"
     DATE_TIME = "date_time"
     DATE = "date"
     DATE_OF_BIRTH = "date_of_birth"
@@ -59,6 +59,7 @@ class TableConfig(TypedDict):
 class WatermarkColumn(Enum):
     ACTIVITY = "activity"
     LOW_WATERMARK = "low_watermark"
+    TABLE_NAME = "table_name"
 
 
 class PipelineActivity(Enum):
@@ -72,3 +73,10 @@ class ChangeType(Enum):
     DELETE = "delete"
     PRE_UPDATE = "update_preimage"
     POST_UPDATE = "update_postimage"
+
+
+# Referene https://docs.databricks.com/en/delta/delta-change-data-feed.html
+class ReservedColumns(Enum):
+    CHANGE = "_change_type"
+    COMMIT = "_commit_version"
+    COMMIT_TIME = "_commit_timestamp"

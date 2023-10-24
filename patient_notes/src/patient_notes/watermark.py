@@ -22,6 +22,7 @@ def get_low_watermark(
     spark_session: SparkSession,
     activity: PipelineActivity,
     watermark_url: str,
+    table_name: str,
     default_value=0,
 ) -> int:
     """
@@ -46,22 +47,31 @@ def get_low_watermark(
     # Create new delta table if needed
     if not DeltaTable.isDeltaTable(spark_session, watermark_url):
         df = spark_session.createDataFrame(
-            [(default_value, activity.value)],
-            [WatermarkColumn.LOW_WATERMARK.value, WatermarkColumn.ACTIVITY.value],
+            [(default_value, activity.value, table_name)],
+            [
+                WatermarkColumn.LOW_WATERMARK.value,
+                WatermarkColumn.ACTIVITY.value,
+                WatermarkColumn.TABLE_NAME.value,
+            ],
         )
         df.write.format("delta").mode("overwrite").save(watermark_url)
         return default_value
 
     df = spark_session.read.format("delta").load(watermark_url)
     activity_watermark_row = df.filter(
-        col(WatermarkColumn.ACTIVITY.value) == activity.value
+        (col(WatermarkColumn.ACTIVITY.value) == activity.value)
+        & (col(WatermarkColumn.TABLE_NAME.value) == table_name)
     ).orderBy(WatermarkColumn.LOW_WATERMARK.value)
 
     # Insert watermark if needed
     if activity_watermark_row.isEmpty():
         df = spark_session.createDataFrame(
-            [(default_value, activity.value)],
-            [WatermarkColumn.LOW_WATERMARK.value, WatermarkColumn.ACTIVITY.value],
+            [(default_value, activity.value, table_name)],
+            [
+                WatermarkColumn.LOW_WATERMARK.value,
+                WatermarkColumn.ACTIVITY.value,
+                WatermarkColumn.TABLE_NAME.value,
+            ],
         )
         df.write.format("delta").mode("append").save(watermark_url)
         return default_value
@@ -98,6 +108,7 @@ def update_watermark(
     watermark_url: str,
     activity: PipelineActivity,
     last_high_watermark: int,
+    table_name: str,
 ) -> None:
     """
     Updates the low watermark in the Delta table for provided activity.
@@ -113,6 +124,7 @@ def update_watermark(
 
     dt_watermark = DeltaTable.forPath(spark_session, watermark_url)
     dt_watermark.update(
-        condition=col(WatermarkColumn.ACTIVITY.value) == activity.value,
+        condition=(col(WatermarkColumn.ACTIVITY.value) == activity.value)
+        & (col(WatermarkColumn.TABLE_NAME.value) == table_name),
         set={WatermarkColumn.LOW_WATERMARK.value: lit(new_low_watermark)},
     )

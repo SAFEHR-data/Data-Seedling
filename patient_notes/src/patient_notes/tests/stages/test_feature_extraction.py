@@ -95,7 +95,7 @@ def test_extract_features_skips_tables_without_freetext_columns(
     )
 
     table_config_without_freetext_columns: TableConfig = {
-        "column_types": {ColumnType.CLIENT_ID: ["ID"]},
+        "column_types": {ColumnType.HASHABLE_ID: ["ID"]},
         "analysed_columns": [],
     }
 

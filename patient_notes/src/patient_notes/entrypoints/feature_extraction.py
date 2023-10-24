@@ -15,14 +15,15 @@
 import logging
 
 from pyspark.sql.session import SparkSession
-from patient_notes.config import TABLE_CONFIG
+from patient_notes.config import TABLE_CONFIG, WATERMARK_TABLE_NAME
 from patient_notes.datalake import (
     DatalakeZone,
     construct_uri,
-    read_delta_table,
-    overwrite_delta_table,
+    read_delta_table_updates,
+    write_data_update,
     create_table_in_unity_catalog,
 )
+from patient_notes.common_types import PipelineActivity
 from patient_notes.monitoring import initialize_logging
 from patient_notes.stages.feature_extraction import extract_features
 
@@ -51,9 +52,15 @@ if __name__ == "__main__":
     for table_name, table_config in TABLE_CONFIG.items():
         logging.info(f"Processing table for feature extraction: {table_name}")
 
-        # Read from silver
-        df = read_delta_table(
-            spark_session, construct_uri(spark_session, DatalakeZone.SILVER, table_name)
+        watermark_url = construct_uri(spark_session, DatalakeZone.INTERNAL, WATERMARK_TABLE_NAME)
+
+        # Read change from silver
+        df, high_watermark = read_delta_table_updates(
+            spark_session,
+            PipelineActivity.FEATURE_EXTRACTION,
+            construct_uri(spark_session, DatalakeZone.SILVER, table_name),
+            watermark_url,
+            table_name,
         )
 
         if df.isEmpty():
@@ -64,7 +71,17 @@ if __name__ == "__main__":
 
         # Write outputs to gold zone
         gold_uri = construct_uri(spark_session, DatalakeZone.GOLD, table_name)
-        overwrite_delta_table(df, gold_uri)
+        write_data_update(
+            spark_session,
+            gold_uri,
+            df,
+            table_config.get("primary_keys", []),
+            watermark_url,
+            high_watermark,
+            table_name,
+            PipelineActivity.FEATURE_EXTRACTION,
+        )
+
         create_table_in_unity_catalog(
             spark_session,
             gold_uri,
@@ -73,4 +90,7 @@ if __name__ == "__main__":
             table_name,
         )
 
-        logging.info(f"Wrote feature extraction outputs to {table_name} in Datalake gold zone.")
+        logging.info(
+            f"Wrote feature extraction outputs to {table_name} in Datalake gold zone"
+            f" ({df.count()} rows)."
+        )

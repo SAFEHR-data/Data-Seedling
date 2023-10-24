@@ -24,7 +24,12 @@ from patient_notes.watermark import (
     get_low_watermark,
     update_watermark,
 )
-from patient_notes.common_types import ChangeType, DatalakeZone, PipelineActivity
+from patient_notes.common_types import (
+    ChangeType,
+    DatalakeZone,
+    PipelineActivity,
+    ReservedColumns,
+)
 
 
 def construct_uri(spark: SparkSession, zone: DatalakeZone, table: str) -> str:
@@ -61,6 +66,7 @@ def read_delta_table_updates(
     activity: PipelineActivity,
     data_dt_path: str,
     watermark_path: str,
+    table_name: str,
 ) -> Tuple[DataFrame, int]:
     """Read Datalake Delta table updates from specified low_watermark.
 
@@ -70,7 +76,7 @@ def read_delta_table_updates(
         data_dt_path (str): Path of the delta table from where data is to be read.
         watermark_path: (str): Path of the watermark delta table.
     """
-    low_watermark = get_low_watermark(spark, activity, watermark_path)
+    low_watermark = get_low_watermark(spark, activity, watermark_path, table_name)
     high_watermark = get_high_watermark(spark, data_dt_path)
 
     return (
@@ -116,11 +122,13 @@ def create_table_in_unity_catalog(
 
 def write_data_update(
     spark_session: SparkSession,
-    data_dt_path: str,
+    target_dt_path: str,
     processed_df: DataFrame,
     primary_keys: List[str],
     watermark_url: str,
     current_high_watermark: int,
+    table_name: str,
+    activity: PipelineActivity,
 ) -> None:
     """
     Merges source data in processed_df arg into delta table at data_dt_path.
@@ -136,47 +144,64 @@ def write_data_update(
         primary_keys List[]: Primary key column names to use for merge.
         watermark_url (str): Path of delta table which holds watermarks.
         current_high_watermark (int): Current high watermark.
+        table_name (str): Name of the table to store in watermark.
+        activity (PipelineActivity): The activity to store in watermark.
     """
-    delta_table = DeltaTable.forPath(spark_session, data_dt_path)
-    primary_key_match = [
-        col(f"target.{col_name}") == col(f"source.{col_name}") for col_name in primary_keys
-    ]
-    merge_condition = primary_key_match[0]
-    for condition in primary_key_match[1:]:
-        merge_condition = merge_condition & condition
+    # Create empty table if needed
+    if DeltaTable.isDeltaTable(spark_session, target_dt_path):
+        if processed_df.isEmpty():
+            # Don't process and dont update watermark
+            return
 
-    # Update
-    update_df = processed_df.filter(
-        processed_df["_change_type"].isin(
-            [ChangeType.PRE_UPDATE.value, ChangeType.POST_UPDATE.value]
+        delta_table = DeltaTable.forPath(spark_session, target_dt_path)
+        primary_key_match = [
+            col(f"target.{col_name}") == col(f"source.{col_name}") for col_name in primary_keys
+        ]
+        merge_condition = primary_key_match[0]
+        for condition in primary_key_match[1:]:
+            merge_condition = merge_condition & condition
+
+        # Update
+        # TODO
+        update_df = processed_df.filter(
+            processed_df["_change_type"].isin(
+                [ChangeType.PRE_UPDATE.value, ChangeType.POST_UPDATE.value]
+            )
         )
-    )
-    # 'update_preimage' and 'update_postimage' change types are not expected
-    # so raising exception if these change types are found.
-    if update_df.count() > 0:
-        raise ValueError(
-            "DataFrame contains update_preimage or update_postimage _change_type(s). "
-            "Cannot merge data."
+        # 'update_preimage' and 'update_postimage' change types are not expected
+        # so raising exception if these change types are found.
+        if update_df.count() > 0:
+            raise ValueError(
+                "DataFrame contains update_preimage or update_postimage _change_type(s). "
+                "Cannot merge data."
+            )
+
+        # Delete
+        delete_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.DELETE.value)
+        delta_table.alias("target").merge(
+            source=delete_src_df.alias("source"),
+            condition=merge_condition,
+        ).whenMatchedDelete().execute()
+
+        # Insert
+        insert_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.INSERT.value)
+        delta_table.alias("target").merge(
+            source=insert_src_df.alias("source"),
+            condition=merge_condition,
+        ).whenNotMatchedInsertAll().execute()
+    else:
+        target_dt_to_save = processed_df.drop(
+            ReservedColumns.CHANGE.value,
+            ReservedColumns.COMMIT.value,
+            ReservedColumns.COMMIT_TIME.value,
         )
-
-    # Delete
-    delete_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.DELETE.value)
-    delta_table.alias("target").merge(
-        source=delete_src_df.alias("source"),
-        condition=merge_condition,
-    ).whenMatchedDelete().execute()
-
-    # Insert
-    insert_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.INSERT.value)
-    delta_table.alias("target").merge(
-        source=insert_src_df.alias("source"),
-        condition=merge_condition,
-    ).whenNotMatchedInsertAll().execute()
+        target_dt_to_save.write.format("delta").save(target_dt_path)
 
     # Update watermark
     update_watermark(
         spark_session,
         watermark_url,
-        PipelineActivity.PSEUDONYMISATION,
+        activity,
         current_high_watermark,
+        table_name,
     )

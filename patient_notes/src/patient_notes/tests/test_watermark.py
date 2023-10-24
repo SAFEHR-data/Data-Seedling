@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
@@ -26,39 +27,46 @@ from patient_notes.common_types import PipelineActivity
 
 # Test get_low_watermark
 def test_get_low_watermark_returns_low_watermark(spark_session: SparkSession, delta_dir: str):
+    table_name = os.path.basename(delta_dir)
     test_df = spark_session.createDataFrame(
-        [(3, "pseudonymisation"), (1, "featue_extraction")],
-        ["low_watermark", "activity"],
+        [(3, "pseudonymisation", table_name), (1, "featue_extraction", table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     test_df.write.format("delta").save(delta_dir)
 
     actual_low_watermark = get_low_watermark(
-        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name
     )
 
     assert actual_low_watermark == 3
 
 
 def test_get_low_watermark_creates_new_delta_table(spark_session: SparkSession, delta_dir: str):
-    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir)
+    table_name = os.path.basename(delta_dir)
+    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name)
 
     assert DeltaTable.isDeltaTable(spark_session, delta_dir)
     expected_df = spark_session.createDataFrame(
-        [(0, PipelineActivity.PSEUDONYMISATION.value)], ["low_watermark", "activity"]
+        [(0, PipelineActivity.PSEUDONYMISATION.value, table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     new_activity_df = (
         spark_session.read.format("delta")
         .load(delta_dir)
-        .filter(col("activity") == PipelineActivity.PSEUDONYMISATION.value)
+        .filter(
+            (col("activity") == PipelineActivity.PSEUDONYMISATION.value)
+            & (col("table_name") == table_name)
+        )
     )
-    assert_pyspark_df_equal(new_activity_df, expected_df, order_by="activity")
+    assert_pyspark_df_equal(new_activity_df, expected_df, order_by="table_name")
 
 
 def test_get_low_watermark_returns_default_value_when_table_doesnt_exist(
     spark_session: SparkSession, delta_dir: str
 ):
+    table_name = os.path.basename(delta_dir)
     actual_low_watermark = get_low_watermark(
-        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name
     )
 
     assert actual_low_watermark == 0
@@ -67,20 +75,22 @@ def test_get_low_watermark_returns_default_value_when_table_doesnt_exist(
 def test_get_low_watermark_appends_new_watermark_when_it_doesnt_exist(
     spark_session: SparkSession, delta_dir: str
 ):
+    table_name = os.path.basename(delta_dir)
     existing_df = spark_session.createDataFrame(
-        [(1, "existing"), (2, "existing2")], ["low_watermark", "activity"]
+        [(1, "existing", table_name), (2, "existing2", table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     existing_df.write.format("delta").save(delta_dir)
 
-    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir)
+    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name)
 
     expected_df = spark_session.createDataFrame(
         [
-            (1, "existing"),
-            (2, "existing2"),
-            (0, PipelineActivity.PSEUDONYMISATION.value),
+            (1, "existing", table_name),
+            (2, "existing2", table_name),
+            (0, PipelineActivity.PSEUDONYMISATION.value, table_name),
         ],
-        ["low_watermark", "activity"],
+        ["low_watermark", "activity", "table_name"],
     )
     new_activity_df = spark_session.read.format("delta").load(delta_dir)
     assert_pyspark_df_equal(new_activity_df, expected_df, order_by="activity")
@@ -90,35 +100,43 @@ def test_get_low_watermark_creates_activity_row_when_doesnt_exist(
     spark_session: SparkSession,
     delta_dir: str,
 ):
+    table_name = os.path.basename(delta_dir)
     existing_df = spark_session.createDataFrame(
-        [(1, "featue_extraction")], ["low_watermark", "activity"]
+        [(1, "featue_extraction", table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     existing_df.write.format("delta").save(delta_dir)
 
-    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir)
+    get_low_watermark(spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name)
 
     expected_df = spark_session.createDataFrame(
-        [(0, PipelineActivity.PSEUDONYMISATION.value)], ["low_watermark", "activity"]
+        [(0, PipelineActivity.PSEUDONYMISATION.value, table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     new_activity_df = (
         spark_session.read.format("delta")
         .load(delta_dir)
-        .filter(col("activity") == PipelineActivity.PSEUDONYMISATION.value)
+        .filter(
+            (col("activity") == PipelineActivity.PSEUDONYMISATION.value)
+            & (col("table_name") == table_name)
+        )
     )
-    assert_pyspark_df_equal(new_activity_df, expected_df, order_by="activity")
+    assert_pyspark_df_equal(new_activity_df, expected_df, order_by="table_name")
 
 
 def test_get_low_watermark_returns_default_value_when_row_doesnt_exist(
     spark_session: SparkSession,
     delta_dir: str,
 ):
+    table_name = os.path.basename(delta_dir)
     existing_df = spark_session.createDataFrame(
-        [(1, "featue_extraction")], ["low_watermark", "activity"]
+        [(1, "featue_extraction", table_name)],
+        ["low_watermark", "activity", "table_name"],
     )
     existing_df.write.format("delta").save(delta_dir)
 
     actual_low_watermark = get_low_watermark(
-        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, table_name
     )
 
     assert actual_low_watermark == 0
@@ -128,23 +146,29 @@ def test_get_low_watermark_returns_default_value_when_row_doesnt_exist(
 def test_update_watermark_updates_and_doesnt_overwrite_other_existing_data(
     spark_session, delta_dir
 ):
+    table_name = os.path.basename(delta_dir)
     existing_df = spark_session.createDataFrame(
-        [(5, PipelineActivity.PSEUDONYMISATION.value), (2, "act1"), (3, "other")],
-        ["low_watermark", "activity"],
+        [
+            (5, PipelineActivity.PSEUDONYMISATION.value, table_name),
+            (2, "act1", table_name),
+            (3, "other", table_name),
+        ],
+        ["low_watermark", "activity", "table_name"],
     )
     existing_df.write.format("delta").save(delta_dir)
 
-    update_watermark(spark_session, delta_dir, PipelineActivity.PSEUDONYMISATION, 20)
+    update_watermark(spark_session, delta_dir, PipelineActivity.PSEUDONYMISATION, 20, table_name)
 
     actual_df = spark_session.read.format("delta").load(delta_dir)
     expected_df = spark_session.createDataFrame(
-        [(21, PipelineActivity.PSEUDONYMISATION.value), (2, "act1"), (3, "other")],
-        ["low_watermark", "activity"],
+        [
+            (21, PipelineActivity.PSEUDONYMISATION.value, table_name),
+            (2, "act1", table_name),
+            (3, "other", table_name),
+        ],
+        ["low_watermark", "activity", "table_name"],
     )
-    assert (
-        expected_df.orderBy("low_watermark").collect()
-        == actual_df.orderBy("low_watermark").collect()
-    )
+    assert expected_df.orderBy("table_name").collect() == actual_df.orderBy("table_name").collect()
 
 
 # Test get_high_watermark

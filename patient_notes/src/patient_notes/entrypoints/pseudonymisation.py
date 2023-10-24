@@ -15,12 +15,13 @@
 import logging
 
 from pyspark.sql.session import SparkSession
-from patient_notes.config import TABLE_CONFIG, WORKER_COUNT, CORE_COUNT
+from patient_notes.config import TABLE_CONFIG, WORKER_COUNT, CORE_COUNT, WATERMARK_TABLE_NAME
+from patient_notes.common_types import PipelineActivity
 from patient_notes.datalake import (
     DatalakeZone,
     construct_uri,
-    read_delta_table,
-    overwrite_delta_table,
+    read_delta_table_updates,
+    write_data_update,
 )
 from patient_notes.monitoring import initialize_logging
 from patient_notes.stages.pseudonymisation.presidio import (
@@ -37,9 +38,15 @@ if __name__ == "__main__":
     for table_name, table_config in TABLE_CONFIG.items():
         logging.info(f"Processing table for pseudonymisation: {table_name}")
 
-        # Read from bronze
-        df = read_delta_table(
-            spark_session, construct_uri(spark_session, DatalakeZone.BRONZE, table_name)
+        watermark_url = construct_uri(spark_session, DatalakeZone.INTERNAL, WATERMARK_TABLE_NAME)
+
+        # Read change from bronze
+        df, high_watermark = read_delta_table_updates(
+            spark_session,
+            PipelineActivity.PSEUDONYMISATION,
+            construct_uri(spark_session, DatalakeZone.BRONZE, table_name),
+            watermark_url,
+            table_name,
         )
 
         if df.isEmpty():
@@ -52,8 +59,18 @@ if __name__ == "__main__":
             # Pseudonymise
             df = pseudo_transform(df, table_name, table_config, anonymise_udf)
 
-        # Write to silver
-        overwrite_delta_table(df, construct_uri(spark_session, DatalakeZone.SILVER, table_name))
+        # Write change to silver
+        write_data_update(
+            spark_session,
+            construct_uri(spark_session, DatalakeZone.SILVER, table_name),
+            df,
+            table_config.get("primary_keys", []),
+            watermark_url,
+            high_watermark,
+            table_name,
+            PipelineActivity.PSEUDONYMISATION,
+        )
+
         logging.info(
             f"Wrote pseudonymisation outputs to {table_name} in Datalake silver zone"
             f" ({df.count()} rows)."

@@ -17,7 +17,6 @@ import random
 import shutil
 import string
 import time
-from pathlib import Path
 from typing import Generator, Iterator
 
 import pytest
@@ -26,10 +25,8 @@ from pyspark.sql import SparkSession
 from patient_notes.stages.pseudonymisation.presidio import (
     broadcast_presidio_with_anonymise_udf,
 )
-from sqlalchemy import Connection, create_engine
-from testcontainers.mssql import SqlServerContainer
 
-test_datalake_uri = "test.dfs.core.windows.net"
+TEST_DATALAKE_URI = "test.dfs.core.windows.net"
 
 
 @pytest.fixture(scope="session")
@@ -41,11 +38,7 @@ def spark_session() -> Iterator[SparkSession]:
 
     builder = (
         SparkSession.builder.master("local[1]")
-        .config("spark.jars", Path(__file__).parent / "mssql-jdbc-12.4.0.jre11.jar")
-        .config("spark.driver.extraJavaOptions", "-Duser.timezone=UTC")
-        .config("spark.executor.extraJavaOptions", "-Duser.timezone=UTC")
-        .config("spark.sql.session.timeZone", "UTC")
-        .config("spark.secret.datalake-uri", test_datalake_uri)
+        .config("spark.secret.datalake-uri", TEST_DATALAKE_URI)
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.executor.cores", "1")
         .config("spark.executor.instances", "1")
@@ -65,58 +58,45 @@ def spark_session() -> Iterator[SparkSession]:
     session.stop()
 
 
-@pytest.fixture
-def mssql_container() -> Iterator[SqlServerContainer]:
-    container = SqlServerContainer(dialect="mssql+pymssql")
-
-    container.start()
-    yield container
-    container.stop()
-
-
-@pytest.fixture
-def mssql_connection(mssql_container: SqlServerContainer) -> Iterator[Connection]:
-    with create_engine(mssql_container.get_connection_url()).connect() as conn:
-        yield conn
-
-
-@pytest.fixture
-def delta_dir() -> Generator:
-    path = f"/tmp/delta_{''.join(random.choice(string.ascii_lowercase) for i in range(10))}"
-
-    yield path
-
-    shutil.rmtree(path, ignore_errors=True)
-
-
-@pytest.fixture
-def bronze_dir() -> Generator:
-    path = f"/tmp/bronze_{''.join(random.choice(string.ascii_lowercase) for i in range(10))}"
-
-    yield path
-
-    shutil.rmtree(path, ignore_errors=True)
-
-
 @pytest.fixture(scope="session")
 def presidio_udf(spark_session: SparkSession) -> Generator:
     udf = broadcast_presidio_with_anonymise_udf(spark_session)
     yield udf
 
 
+def random_temp_path(path_prefix: str) -> str:
+    return (
+        f"/tmp/{path_prefix}_{''.join(random.choice(string.ascii_lowercase) for i in range(10))}"
+    )
+
+
+def cleanup_temp_path(path: str):
+    shutil.rmtree(path, ignore_errors=True)
+
+
 @pytest.fixture
-def internal_dir() -> Generator:
-    path = f"/tmp/internal_{''.join(random.choice(string.ascii_lowercase) for i in range(10))}"
-
+def delta_dir() -> Generator:
+    path = random_temp_path(path_prefix="delta")
     yield path
+    cleanup_temp_path(path)
 
+
+@pytest.fixture
+def bronze_dir() -> Generator:
+    path = random_temp_path(path_prefix="bronze")
+    yield path
     shutil.rmtree(path, ignore_errors=True)
 
 
 @pytest.fixture
 def silver_dir() -> Generator:
-    path = f"/tmp/silver_{''.join(random.choice(string.ascii_lowercase) for i in range(10))}"
-
+    path = random_temp_path(path_prefix="silver")
     yield path
+    shutil.rmtree(path, ignore_errors=True)
 
+
+@pytest.fixture
+def internal_dir() -> Generator:
+    path = random_temp_path(path_prefix="internal")
+    yield path
     shutil.rmtree(path, ignore_errors=True)

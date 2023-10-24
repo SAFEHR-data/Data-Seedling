@@ -26,7 +26,7 @@ from patient_notes.datalake import (
     read_delta_table_updates,
     write_data_update,
 )
-from patient_notes.conftest import TEST_DATALAKE_URI
+from patient_notes.tests.conftest import TEST_DATALAKE_URI
 
 
 def test_construct_uri(spark_session: SparkSession):
@@ -64,7 +64,7 @@ def test_read_delta_table_update_returns_all_data_when_no_low_watermark_found(
     v_two_df.write.format("delta").mode("append").save(delta_dir)
 
     actual_data = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, internal_dir, "t1"
     )
     actual_df = actual_data[0].select(["key", "value"])
 
@@ -95,11 +95,13 @@ def test_read_delta_table_update_returns_data_of_multiple_version_given_low_wate
     # Create watermark with low_watermark value
     activity = PipelineActivity.PSEUDONYMISATION
     watermark_df = spark_session.createDataFrame(
-        [(activity.value, 2)], ["activity", "low_watermark"]
+        [(activity.value, 2, "table")], ["activity", "low_watermark", "table_name"]
     )
     watermark_df.write.format("delta").mode("overwrite").save(internal_dir)
 
-    actual_data = read_delta_table_updates(spark_session, activity, delta_dir, internal_dir)
+    actual_data = read_delta_table_updates(
+        spark_session, activity, delta_dir, internal_dir, "table"
+    )
     actual_df = actual_data[0].select(["key", "value"])
 
     expected_df = spark_session.createDataFrame([(2, "c"), (3, "d")], ["key", "value"])
@@ -128,11 +130,13 @@ def test_read_delta_table_update_returns_data_of_last_version_given_low_watermar
     # Create watermark with low_watermark
     activity = PipelineActivity.PSEUDONYMISATION
     watermark_df = spark_session.createDataFrame(
-        [(activity.value, 3)], ["activity", "low_watermark"]
+        [(activity.value, 3, "table")], ["activity", "low_watermark", "table_name"]
     )
     watermark_df.write.format("delta").mode("overwrite").save(internal_dir)
 
-    actual_data = read_delta_table_updates(spark_session, activity, delta_dir, internal_dir)
+    actual_data = read_delta_table_updates(
+        spark_session, activity, delta_dir, internal_dir, "table"
+    )
     actual_df = actual_data[0].select(["key", "value"])
 
     expected_df = spark_session.createDataFrame([(3, "d")], ["key", "value"])
@@ -154,12 +158,16 @@ def test_read_delta_table_update_returns_appended_row(
     # Create watermark with low_watermark
     activity = PipelineActivity.PSEUDONYMISATION
     watermark_df = spark_session.createDataFrame(
-        [(activity.value, 2)], ["activity", "low_watermark"]
+        [(activity.value, 2, "table")], ["activity", "low_watermark", "table_name"]
     )
     watermark_df.write.format("delta").mode("overwrite").save(internal_dir)
 
     data = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, delta_dir, internal_dir
+        spark_session,
+        PipelineActivity.PSEUDONYMISATION,
+        delta_dir,
+        internal_dir,
+        "table",
     )[0]
     actual_df = data.select(["key", "value"])
 
@@ -189,11 +197,20 @@ def test_write_data_update_inserts_data_from_multiple_versions(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     # Third insert in Bronze (after on write)
     third_update_df = spark_session.createDataFrame([(4, "d")], ["key", "value"])
@@ -201,11 +218,20 @@ def test_write_data_update_inserts_data_from_multiple_versions(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     actual_bronze_data = (
         spark_session.read.format("delta").load(bronze_dir).orderBy("key").collect()
@@ -236,11 +262,20 @@ def test_write_data_update_treats_vacuum_operation_as_incremental_update(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     actual_bronze_data = (
         spark_session.read.format("delta").load(bronze_dir).orderBy("key").collect()
@@ -271,11 +306,20 @@ def test_write_data_update_deletes_overwritten_data(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     # Delete
     delete_df = spark_session.read.format("delta").load(bronze_dir).filter(col("key") != lit(1))
@@ -283,11 +327,20 @@ def test_write_data_update_deletes_overwritten_data(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     actual_bronze_data = (
         spark_session.read.format("delta").load(bronze_dir).orderBy("key").collect()
@@ -317,11 +370,20 @@ def test_write_data_update_deletes_given_data_deleted_using_whenMatchedDelete(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     # Delete
     delta_table = DeltaTable.forPath(spark_session, bronze_dir)
@@ -333,11 +395,20 @@ def test_write_data_update_deletes_given_data_deleted_using_whenMatchedDelete(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
-    write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+    write_data_update(
+        spark_session,
+        silver_dir,
+        data,
+        ["key"],
+        internal_dir,
+        high_watermark,
+        "t1",
+        PipelineActivity.PSEUDONYMISATION,
+    )
 
     actual_bronze_data = (
         spark_session.read.format("delta").load(bronze_dir).orderBy("key").collect()
@@ -374,12 +445,21 @@ def test_write_data_update_raises_exception_when_change_type_is_for_update(
 
     # Read
     data, high_watermark = read_delta_table_updates(
-        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir
+        spark_session, PipelineActivity.PSEUDONYMISATION, bronze_dir, internal_dir, "t1"
     )
 
     # Write
     with pytest.raises(ValueError) as excinfo:
-        write_data_update(spark_session, silver_dir, data, ["key"], internal_dir, high_watermark)
+        write_data_update(
+            spark_session,
+            silver_dir,
+            data,
+            ["key"],
+            internal_dir,
+            high_watermark,
+            "t1",
+            PipelineActivity.PSEUDONYMISATION,
+        )
 
     assert (
         str(excinfo.value)

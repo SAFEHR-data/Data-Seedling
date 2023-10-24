@@ -24,30 +24,6 @@ from patient_notes.common_types import ColumnType
 
 
 # Pseudonymisation - Remove column tests
-def test_pseudo_transform_removes_column(
-    spark_session: SparkSession, presidio_udf: UserDefinedFunction
-) -> None:
-    input_df = spark_session.createDataFrame(
-        [
-            ("This is a note value", 1, "text value"),
-            ("This is a note value", 2, "text value"),
-        ],
-        ["NoteText", "ID", "Text"],
-    )
-    table: TableConfig = {
-        "column_types": {ColumnType.OTHER_IDENTIFIABLE: ["NoteText"]},
-        "analysed_columns": [],
-    }
-
-    output_df = pseudo_transform(input_df, "table1", table, presidio_udf)
-
-    expected_df = spark_session.createDataFrame(
-        [(1, "text value"), (2, "text value")], ["ID", "Text"]
-    )
-    assert set(expected_df.columns) == set(output_df.columns)
-    assert expected_df.collect() == output_df.collect()
-
-
 def test_pseudo_transform_removes_multiple_columns(
     spark_session: SparkSession, presidio_udf: UserDefinedFunction
 ) -> None:
@@ -93,56 +69,7 @@ def test_pseudo_transform_raises_exception_when_column_doesnt_exist(
     assert "ColumnThatDoesntExist" in str(excinfo.value)
 
 
-def test_pseudo_transform_does_not_change_df(
-    spark_session: SparkSession, presidio_udf: UserDefinedFunction
-) -> None:
-    input_df = spark_session.createDataFrame(
-        [
-            ("This is a note value", 1, "text value"),
-            ("This is a note value", 2, "text value"),
-        ],
-        ["NoteText", "ID", "Text"],
-    )
-    table: TableConfig = {
-        "column_types": {},
-        "analysed_columns": [],
-    }
-
-    output_df = pseudo_transform(input_df, "table1", table, presidio_udf)
-
-    expected_df = spark_session.createDataFrame(
-        [
-            ("This is a note value", 1, "text value"),
-            ("This is a note value", 2, "text value"),
-        ],
-        ["NoteText", "ID", "Text"],
-    )
-    assert set(expected_df.columns) == set(output_df.columns)
-    assert expected_df.collect() == output_df.collect()
-
-
 # Pseudonymisation - Free text tests
-def test_pseudo_transform_pseudonymises_free_text_name_and_location(
-    spark_session: SparkSession, presidio_udf: UserDefinedFunction
-) -> None:
-    input_df = spark_session.createDataFrame(
-        [("John Smith is in London", 1), ("Adam is in London", 2)], ["NoteText", "ID"]
-    )
-    table: TableConfig = {
-        "column_types": {ColumnType.FREE_TEXT: ["NoteText"]},
-        "analysed_columns": [],
-    }
-
-    output_df = pseudo_transform(input_df, "table1", table, presidio_udf)
-
-    expected_df = spark_session.createDataFrame(
-        [("<PERSON> is in <LOCATION>", 1), ("<PERSON> is in <LOCATION>", 2)],
-        ["NoteText", "ID"],
-    )
-    assert set(expected_df.columns) == set(output_df.columns)
-    assert expected_df.collect() == output_df.collect()
-
-
 def test_pseudo_transform_pseudonymises_multiple_free_text_columns(
     spark_session: SparkSession, presidio_udf: UserDefinedFunction
 ) -> None:
@@ -187,16 +114,8 @@ def test_pseudo_transform_doesnt_throw_error_when_no_columns_are_configured(
     }
 
     output_df = pseudo_transform(input_df, "table1", table, presidio_udf)
-
-    expected_df = spark_session.createDataFrame(
-        [
-            ("John Smith is in London", 1, "This is London"),
-            ("Adam is in London", 2, "This is London"),
-        ],
-        ["NoteText", "ID", "OtherText"],
-    )
-    assert set(expected_df.columns) == set(output_df.columns)
-    assert expected_df.collect() == output_df.collect()
+    assert set(input_df.columns) == set(output_df.columns)
+    assert input_df.collect() == output_df.collect()
 
 
 def test_pseudo_transform_raises_exception_when_free_text_column_doesnt_exist(
@@ -291,7 +210,7 @@ def test_pseudo_transform_hashes_id(
 ) -> None:
     input_df = spark_session.createDataFrame([(1, "Text1")], ["ID", "Text"])
     table: TableConfig = {
-        "column_types": {ColumnType.CLIENT_ID: ["ID"]},
+        "column_types": {ColumnType.HASHABLE_ID: ["ID"]},
         "analysed_columns": [],
     }
 
@@ -305,12 +224,12 @@ def test_pseudo_transform_hashes_id(
     assert_pyspark_df_equal(output_df, expected_df, order_by="Text")
 
 
-def test_pseudo_transform_raises_exception_when_client_id_columns_doesnt_exist(
+def test_pseudo_transform_raises_exception_when_hashable_id_columns_doesnt_exist(
     spark_session: SparkSession, presidio_udf: UserDefinedFunction
 ) -> None:
     input_df = spark_session.createDataFrame([(1, "Text1")], ["ID", "Text"])
     table: TableConfig = {
-        "column_types": {ColumnType.CLIENT_ID: ["ThisColumnDoesntExist"]},
+        "column_types": {ColumnType.HASHABLE_ID: ["ThisColumnDoesntExist"]},
         "analysed_columns": [],
     }
 
@@ -318,6 +237,3 @@ def test_pseudo_transform_raises_exception_when_client_id_columns_doesnt_exist(
         pseudo_transform(input_df, "table1", table, presidio_udf)
 
     assert "ThisColumnDoesntExist" in str(excinfo.value)
-
-
-# TODO: More tests
