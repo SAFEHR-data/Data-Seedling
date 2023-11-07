@@ -16,10 +16,9 @@ import abc
 import logging
 from dataclasses import dataclass
 
-from opencensus.stats.measure import MeasureInt
 from pyspark.sql import DataFrame, SparkSession
 
-from helloworld.monitoring import create_and_send_metric
+from helloworld.monitoring import send_rows_updated_metric
 
 
 @dataclass
@@ -122,18 +121,7 @@ def save_feature_store_table(
     :param table_name: Table name to save the table (note that database name comes from config)
 
     """
-    # This exact metric name expected by FlowEHR in order to create dashboards automatically
-    METRIC_NAME = "rows_inserted"
-
-    create_and_send_metric(
-        value=df.count(),
-        tags={"table_name": table_name},
-        name=METRIC_NAME,
-        description="Number of rows inserted into the database",
-        unit="1",
-        tag_keys=["table_name"],
-        metric_type=MeasureInt,
-    )
+    send_rows_updated_metric(value=df.count(), tags={"table_name": table_name})
 
     writer = (
         df.write.format("jdbc")

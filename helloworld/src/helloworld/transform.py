@@ -21,8 +21,10 @@ def example_transform(df: DataFrame) -> DataFrame:
     """
     Example transformation
 
-    :param df: Input dataframe to be transformed
-    :return: Transformed dataframe
+    Args:
+        df (DataFrame): Input dataframe to be transformed
+    Returns
+        DataFrame: Transformed dataframe
     """
     logging.info("Executing example transform")
     return df.groupby("value").count()
