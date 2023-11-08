@@ -3,22 +3,6 @@
     "properties": {
         "activities": [
             {
-                "name": "IngestionActivity",
-                "type": "DatabricksSparkPython",
-                "typeProperties": {
-                    "pythonFile": "dbfs:/pipelines/patient_notes/artifacts/ingestion.py",
-                    "libraries": [
-                        {
-                            "whl": "dbfs:/pipelines/patient_notes/artifacts/patient_notes-0.0.1-py3-none-any.whl"
-                        }
-                    ]
-                },
-                "linkedServiceName": {
-                    "referenceName": "ADBLinkedServiceViaMSI",
-                    "type": "LinkedServiceReference"
-                }
-            },
-            {
                 "name": "PseudonymisationActivity",
                 "type": "DatabricksSparkPython",
                 "typeProperties": {
@@ -29,14 +13,7 @@
                         }
                     ]
                 },
-                "dependsOn": [
-                    {
-                        "activity": "IngestionActivity",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    }
-                ],
+                "dependsOn": [],
                 "linkedServiceName": {
                     "referenceName": "ADBLinkedServiceViaMSI",
                     "type": "LinkedServiceReference"

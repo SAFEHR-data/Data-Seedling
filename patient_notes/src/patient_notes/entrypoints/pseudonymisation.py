@@ -20,8 +20,8 @@ from patient_notes.common_types import PipelineActivity
 from patient_notes.datalake import (
     DatalakeZone,
     construct_uri,
-    read_delta_table_updates,
-    write_data_update,
+    read_delta_table_update,
+    write_delta_table_update,
 )
 from patient_notes.monitoring import initialize_logging
 from patient_notes.stages.pseudonymisation.presidio import (
@@ -31,7 +31,7 @@ from patient_notes.stages.pseudonymisation.transform import pseudo_transform
 
 if __name__ == "__main__":
     spark_session = SparkSession.builder.getOrCreate()
-    initialize_logging()
+    initialize_logging(export_interval_seconds=1.0)
 
     anonymise_udf = broadcast_presidio_with_anonymise_udf(spark_session)
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         watermark_url = construct_uri(spark_session, DatalakeZone.INTERNAL, WATERMARK_TABLE_NAME)
 
         # Read change from bronze
-        df, high_watermark = read_delta_table_updates(
+        df, high_watermark = read_delta_table_update(
             spark_session,
             PipelineActivity.PSEUDONYMISATION,
             construct_uri(spark_session, DatalakeZone.BRONZE, table_name),
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             df = pseudo_transform(df, table_name, table_config, anonymise_udf)
 
         # Write change to silver
-        write_data_update(
+        write_delta_table_update(
             spark_session,
             construct_uri(spark_session, DatalakeZone.SILVER, table_name),
             df,

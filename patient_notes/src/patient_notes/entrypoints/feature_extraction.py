@@ -19,8 +19,8 @@ from patient_notes.config import TABLE_CONFIG, WATERMARK_TABLE_NAME
 from patient_notes.datalake import (
     DatalakeZone,
     construct_uri,
-    read_delta_table_updates,
-    write_data_update,
+    read_delta_table_update,
+    write_delta_table_update,
     create_table_in_unity_catalog,
 )
 from patient_notes.common_types import PipelineActivity
@@ -30,7 +30,7 @@ from patient_notes.stages.feature_extraction import extract_features
 
 if __name__ == "__main__":
     spark_session = SparkSession.builder.getOrCreate()
-    initialize_logging()
+    initialize_logging(export_interval_seconds=1.0)
 
     # Get cognitive key(s) from Spark secret
     cognitive_keys_string = spark_session.conf.get("spark.secret.cognitive-services-keys")
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         watermark_url = construct_uri(spark_session, DatalakeZone.INTERNAL, WATERMARK_TABLE_NAME)
 
         # Read change from silver
-        df, high_watermark = read_delta_table_updates(
+        df, high_watermark = read_delta_table_update(
             spark_session,
             PipelineActivity.FEATURE_EXTRACTION,
             construct_uri(spark_session, DatalakeZone.SILVER, table_name),
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
         # Write outputs to gold zone
         gold_uri = construct_uri(spark_session, DatalakeZone.GOLD, table_name)
-        write_data_update(
+        write_delta_table_update(
             spark_session,
             gold_uri,
             df,

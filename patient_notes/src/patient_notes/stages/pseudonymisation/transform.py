@@ -189,7 +189,6 @@ def pseudo_transform(
             case ColumnType.HASHABLE_ID:
                 df = hash_hashable_id(df, columns, table_name)
             case _:
-                # TODO: Implement additional column types (if needed).
                 logging.warning(f"Unsupported column type: {column_type}. Skipping.")
                 pass
 
