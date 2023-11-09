@@ -27,7 +27,7 @@ from patient_notes.tests.conftest import TEST_DATALAKE_URI
 
 
 def test_construct_uri(spark_session: SparkSession):
-    table = "dbo.TestTable"
+    table = "TestTable"
     zone = DatalakeZone.BRONZE
     uri = construct_uri(spark_session, zone, table)
     assert uri == f"abfss://{zone.value}@{TEST_DATALAKE_URI}/TestTable"

@@ -1,12 +1,17 @@
 {
-    "name": "HelloWorldPipeline",
+    "name": "ExampleTransformPipeline",
     "properties": {
         "activities": [
             {
                 "name": "DatabricksPythonActivity",
                 "type": "DatabricksSparkPython",
                 "typeProperties": {
-                    "pythonFile": "dbfs:/pipelines/helloworld/artifacts/helloworld.py"
+                    "pythonFile": "dbfs:/pipelines/example_transform/artifacts/entrypoint.py",
+                    "libraries": [
+                        {
+                            "whl": "dbfs:/pipelines/example_transform/artifacts/example_transform-0.0.1-py3-none-any.whl"
+                        }
+                    ]
                 },
                 "linkedServiceName": {
                     "referenceName": "ADBLinkedServiceViaMSI",

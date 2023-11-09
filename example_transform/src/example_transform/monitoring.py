@@ -28,6 +28,9 @@ from opencensus.trace.samplers import AlwaysOnSampler
 from opencensus.trace.tracer import Tracer
 
 
+APPLICATION_INSIGHTS_EXPORT_INTERVAL = 60.0
+
+
 def _telemetry_processor_callback_function(envelope: Any) -> None:
     envelope.tags["ai.cloud.role"] = "databricks"
 
@@ -52,7 +55,6 @@ class ExceptionTracebackFilter(logging.Filter):
 
 def initialize_logging(
     logging_level: int = logging.INFO,
-    export_interval_seconds: float = 5.0,
     correlation_id: str | None = None,
 ) -> logging.LoggerAdapter:
     """Adds the Application Insights handler for the root logger and sets
@@ -72,7 +74,7 @@ def initialize_logging(
     logger = logging.getLogger()
 
     try:
-        azurelog_handler = AzureLogHandler(export_interval=export_interval_seconds)
+        azurelog_handler = AzureLogHandler(export_interval=APPLICATION_INSIGHTS_EXPORT_INTERVAL)
         azurelog_handler.add_telemetry_processor(_telemetry_processor_callback_function)
         azurelog_handler.addFilter(ExceptionTracebackFilter())
         logger.addHandler(azurelog_handler)
@@ -116,7 +118,7 @@ def send_rows_updated_metric(value: int, tags: dict[str, str]):
     # (infrastructure/transform/locals.tf)
     metric_name = "rows_updated"
     # Must match the top-level name of the pipeline for the automatic dashboard creation to work
-    pipeline_name: str = "helloworld"
+    pipeline_name: str = "example_transform"
 
     send_metric(
         name=metric_name,

@@ -14,7 +14,7 @@
 
 from pyspark.sql import SparkSession
 
-from helloworld.transform import example_transform
+from example_transform.transform import example_transform
 
 
 # This example test shows how any Spark transformation can be tested using spark_session fixture

@@ -21,16 +21,19 @@ help: ## Show this help
         | column -t -s '|'
 	@echo
 
-install: ## Installs the required dependencies
+install: ## Installs all required dependencies 
 	python3 -m pip install -e "."
 
 build: ## Build the Python wheel(s)
 	# SOURCE_DATE_EPOCH is needed to build the wheel idempotently
 	SOURCE_DATE_EPOCH=315532800 HTTPS_PROXY= HTTP_PROXY= python3 -m build
 
+test: ## Run Python unit tests
+	pytest src/
+
 artifacts: build ## Gather artifacts for sending to Spark
 	mkdir -p artifacts
-	cp src/patient_notes/entrypoints/*.py artifacts
+	cp src/example_transform/entrypoint.py artifacts
 	cp dist/*.whl artifacts/
 
 clean: ## Clean all built objects
@@ -38,12 +41,6 @@ clean: ## Clean all built objects
 	rm -rf dist
 	rm -rf src/*.egg-info
 	find . -name "*.pyc" -type f -delete
-
-test: ## Run Python unit tests including live TA4H tests (requires COGNITIVE_KEYS env var to be set)
-	(cd src/patient_notes/tests; pytest -m "not ta4h")
-
-test-without-ta4h: ## Run Python unit tests excluding TA4H tests
-	(cd src/patient_notes/tests; pytest)
 
 mypy: ## Run mypy (see https://jaredkhan.com/blog/mypy-pre-commit on why it isn't run in pre-commit hook)
 	mypy "src"

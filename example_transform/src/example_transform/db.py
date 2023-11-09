@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 from pyspark.sql import DataFrame, SparkSession
 
-from helloworld.monitoring import send_rows_updated_metric
+from example_transform.monitoring import send_rows_updated_metric
 
 
 @dataclass

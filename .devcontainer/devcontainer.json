@@ -43,7 +43,7 @@
         4040
     ],
 
-    "onCreateCommand": "make install-all",
+    "onCreateCommand": "make install",
 
     "postCreateCommand": "git config --global --add safe.directory /workspaces/Data-Seedling && pre-commit install"
 

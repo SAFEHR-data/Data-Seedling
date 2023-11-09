@@ -14,9 +14,9 @@
 
 from pyspark.sql.session import SparkSession
 
-from helloworld.db import feature_store_config, save_feature_store_table
-from helloworld.monitoring import initialize_logging
-from helloworld.transform import example_transform
+from example_transform.db import feature_store_config, save_feature_store_table
+from example_transform.monitoring import initialize_logging
+from example_transform.transform import example_transform
 
 
 if __name__ == "__main__":

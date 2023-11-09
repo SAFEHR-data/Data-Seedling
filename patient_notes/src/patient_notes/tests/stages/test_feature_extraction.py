@@ -156,6 +156,9 @@ def test_random_cog_key_used_if_df_is_less_than_100_rows(spark_session: SparkSes
     assert mock_analyse.call_args[0][2] in cog_keys
 
 
+@pytest.mark.skipif(
+    os.getenv("COGNITIVE_KEYS") is None, "Missing COGNITIVE_KEYS environment variable"
+)
 @pytest.mark.ta4h
 def test_live_ta4h_service_extracts_expected_features(spark_session: SparkSession, request):
     extracted_col = f"NoteText{EXTRACTED_PREFIX}"
@@ -164,10 +167,8 @@ def test_live_ta4h_service_extracts_expected_features(spark_session: SparkSessio
     df = spark_session.read.parquet(parquet_path)
 
     cognitive_keys_string = os.environ.get("COGNITIVE_KEYS")
-
     if not cognitive_keys_string:
         raise ValueError("Missing COGNITIVE_KEYS environment variable")
-
     cog_keys = cognitive_keys_string.split(";")
 
     # Extract features using live TA4H endpoint

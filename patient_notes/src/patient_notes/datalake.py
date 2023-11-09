@@ -114,7 +114,6 @@ def create_table_in_unity_catalog(
         path (str): Path to a previously saved table in Data lake.
         catalog_name (str)
     """
-    # cut `dbo.` from the table_name
     spark_session.sql(
         f"CREATE TABLE IF NOT EXISTS `{catalog_name}`.`{schema_name}`.{table_name}"
         f' LOCATION "{path}"'

@@ -29,6 +29,12 @@ from patient_notes.stages.pseudonymisation.presidio import (
 TEST_DATALAKE_URI = "test.dfs.core.windows.net"
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "ta4h: mark test as calling live Text Analytics For Health endpoint"
+    )
+
+
 @pytest.fixture(scope="session")
 def spark_session() -> Iterator[SparkSession]:
     # Used to ensure the tested python environment is using UTC like the Spark
@@ -85,18 +91,18 @@ def delta_dir() -> Generator:
 def bronze_dir() -> Generator:
     path = random_temp_path(path_prefix="bronze")
     yield path
-    shutil.rmtree(path, ignore_errors=True)
+    cleanup_temp_path(path)
 
 
 @pytest.fixture
 def silver_dir() -> Generator:
     path = random_temp_path(path_prefix="silver")
     yield path
-    shutil.rmtree(path, ignore_errors=True)
+    cleanup_temp_path(path)
 
 
 @pytest.fixture
 def internal_dir() -> Generator:
     path = random_temp_path(path_prefix="internal")
     yield path
-    shutil.rmtree(path, ignore_errors=True)
+    cleanup_temp_path(path)

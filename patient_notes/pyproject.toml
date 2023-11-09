@@ -5,13 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "patient_notes"
 version = "0.0.1"
-dependencies = []
-
-[project.optional-dependencies]
-build = [
-    "build == 0.10.0"
-]
-test = [
+dependencies = [
+    "build == 0.10.0",
     "delta-spark == 2.4.0",
     "opencensus-ext-azure==1.1.9",
     "opencensus-ext-logging==0.1.1",
@@ -24,10 +19,7 @@ test = [
     "presidio-analyzer == 2.2.33",
     "presidio-anonymizer == 2.2.33",
     "synapseml == 0.11.3",
-    "en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.6.0/en_core_web_lg-3.6.0-py3-none-any.whl"
-
-]
-lint = [
+    "en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.6.0/en_core_web_lg-3.6.0-py3-none-any.whl",
     "mypy == 1.0.0",
     "pre-commit == 3.5.0"
 ]

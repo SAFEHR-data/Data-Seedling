@@ -29,19 +29,14 @@ help: ## Show this help
 artifacts: ## Create all pipeline artifacts
 	$(call all-pipelines,artifacts)
 
-install-all: install-build install-test install-lint
-
-install-build: ## Install all pre-requisites for build for all pipelines
-	$(call all-pipelines,install-build)
-
-install-test: ## Install all pre-requisites for test for all pipelines
-	$(call all-pipelines,install-test)
-
-install-lint: ## Install all pre-requisites for lint for all pipelines
-	$(call all-pipelines,install-lint)
+install: ## Install all pre-requisites for all pipelines
+	$(call all-pipelines,install)
 
 test: ## Test all pipelines
 	$(call all-pipelines,test)
 
 mypy: ## Call mypy on all pipelines
 	$(call all-pipelines,mypy)
+
+lint: ## Call lint on all pipelines (will also call mypy)
+	$(call all-pipelines,lint)

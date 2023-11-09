@@ -1,7 +1,29 @@
 # Data-Seedling
 
-TODO: Outline what each of the pipelines is for
+This repository serves as an example Data Pipeline designed to work with [FlowEHR](https://github.com/UCLH-Foundry/FlowEHR).
 
-TODO: Show how to deploy FlowEHR to test the pipelines 
+It showcases the way to write, test, deploy, and run data pipleines in production, and do so with a focus on long-term maintainability.
 
-TODO: Show the metrics
+## FlowEHR
+
+FlowEHR is a framework for creating secure data transformation pipelines in Azure. FlowEHR supports authoring multiple data pipelines through multiple repositories, and automates deployment of cloud resources to run these pipelines.
+
+If you don't yet know about FlowEHR, please read [README](https://github.com/UCLH-Foundry/FlowEHR/blob/main/README.md).
+
+## Quick Start
+
+For instructions on how to develop, run and deploy data pipelines, please see [this guide](./docs/quick_start.md).
+
+## Design Principles
+
+For more details about design principles behind the solution, please see [design principles](./docs/design_principles.md).
+
+## Pipelines
+
+This repository consists of three data pipelines. 
+
+The first one, [helloworld](./helloworld/README.md), is smallest possible data pipeline that works with FlowEHR. When ran, it prints "Hello World!" to the output. It is useful to understand what kind of contract a FlowEHR data pipeline expects.
+
+The second one, [example_transform](./example_transform/README.md), is a simple example data pipeline and is a great place to start if you are thinkig of writing your own data transformations. It shows you how you can write, test and deploy a basic data transformation using FlowEHR, and package data transformation code into a Python wheel. The result of the transormation is saved into Microsoft SQL database, and metrics and logs are exported into Azure Monitor. There is a unit test as well that shows how to use the test framework.
+
+The third one, [patient_notes](./patient_notes/README.md), is a more complex data pipeline. It pseudonymised patient clinical notes using [Microsoft Presidio](https://microsoft.github.io/presidio/) in the first step, and extracts useful medical information from it using [Azure Text Analytics for Health](https://learn.microsoft.com/en-us/azure/ai-services/language-service/text-analytics-for-health/overview?tabs=ner) in the second step. It also showcases how processing can be done in an incremental manner using Change Data Capture. It can be useful if you are exploring similar scnearios in your data pipeline project.
