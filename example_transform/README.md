@@ -2,11 +2,11 @@
 
 ## What is this
 
-This is an example data pipeline that creates a fake dataframe, then runs a basic transformation on it and saves the result in Microsoft SQL database (feature store). It shows you how you can write, test and deploy a basic data transformation using FlowEHR, and package data transformation code into a Python wheel, and send metrics and logs to Azure Monitor.
+This is an example data pipeline that creates a fake DataFrame, then runs a basic transformation on it and saves the result in the Microsoft SQL database (feature store). It shows you how you can write, test and deploy a basic data transformation using FlowEHR, package data transformation code into a Python wheel, and send metrics and logs to Azure Monitor.
 
 ## Quick start
 
-Make sure to follow [quick start guide](../docs/quick_start.md) on working with data pipelines in FlowEHR.
+Make sure to follow the [quick start guide](../docs/quick_start.md) on working with data pipelines in FlowEHR.
 
 ## Code Structure
 
@@ -17,5 +17,5 @@ These are the files that are useful to explore:
 - [Test configuration](./src/example_transform/tests/conftest.py): Helper fixture using [] for writing unit tests with PySpark
 - [db.py](./src/example_transform/db.py): Helpers for working with Microsoft SQL database
 - [monitoring.py](./src/example_transform/monitoring.py): Helpers for sending logs and metrics to Azure Monitor.
-- [Makefile](./Makefile): Used for command shortcuts, and certain commands are expected to be defined there by FlowEHR to ensure successful deployment of the pipeline to Azure.
+- [Makefile](./Makefile): Used for command shortcuts, and certain commands are expected to be defined to ensure successful deployment of the pipeline to Azure.
 - [pyproject.toml](./pyproject.toml): Defines building of the Python wheel that contains all code defined for the pipeline.

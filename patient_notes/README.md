@@ -17,7 +17,7 @@ The values that need to be replaced are:
 - `location` and `cognitive-services-location`: Set to Azure region you are using, e.g. `uksouth`.
 - `storage_account_name` and `resource_group_name` in `unity_catalog_metastore` section: Unity Catalog Metastore can only be created once per Azure tenant. If your tenant does not have Unity Catalog Metastore deployed, pick any suitable globally unique value for `storage_account_name` and any suitable name for `resource_group_name`.
 - `databricks_account_id`: An ID for Databricks Account (on a tenant level). Follow the official documentation to obtain it: [Locate your Account ID](https://docs.databricks.com/en/administration-guide/account-settings/index.html#locate-your-account-id).
-- `cognitive-services-keys` and `cognitive-services-location`: To run the Feature Extraction part of the pipeline, you need to have a Language service deployed in Azure. It is not deployed automatically during FlowEHR deployment, so you'll need to do it manually. See screenshot below.
+- `cognitive-services-keys` and `cognitive-services-location`: To run the Feature Extraction part of the pipeline, you need to have a Language service deployed in Azure. It is not deployed automatically during FlowEHR deployment, so you'll need to do it manually. See the screenshot below.
 - `azure-tenant-id`: Should contain Azure Tenant ID (also sometimes known as Directory ID) for your Azure Tenant.
 
 ![Create Language Service](/assets/CreateLanguageService.png)
@@ -77,7 +77,7 @@ These are the files that are useful to explore:
 - [Test configuration](./src/patient_notes/tests/conftest.py): Helper fixture using [] for writing unit tests with PySpark
 - [db.py](./src/patient_notes/db.py): Helpers for working with Microsoft SQL database
 - [datalake.py](./src/patient_notes/datalake.py): File that contains helper methods for working with Data Lake.
-- [watermark.py](./src/patient_notes/watermark.py.py): File that has the logic for watermark algorithm, used for incremental updates.
+- [watermark.py](./src/patient_notes/watermark.py.py): File that has the logic for the watermark algorithm, used for incremental updates.
 - [monitoring.py](./src/patient_notes/monitoring.py): Helpers for sending logs and metrics to Azure Monitor.
-- [Makefile](./Makefile): Used for command shortcuts, and certain commands are expected to be defined there by FlowEHR to ensure successful deployment of the pipeline to Azure.
+- [Makefile](./Makefile): Used for command shortcuts, and certain commands are expected to be defined to ensure successful deployment of the pipeline to Azure.
 - [pyproject.toml](./pyproject.toml): Defines building of the Python wheel that contains all code defined for the pipeline.
