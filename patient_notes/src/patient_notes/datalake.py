@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import List, Tuple
+from typing import List, Tuple, Any
 import logging
 
 from delta import DeltaTable
@@ -121,6 +121,25 @@ def create_table_in_unity_catalog(
     )
 
 
+def merge_by_primary_keys_condition(primary_keys: List[str]) -> Any:
+    """
+    Helper method constructing merge condition by all primary keys
+
+    Args:
+        primary_keys (List[str]): List of all primary key column names
+    Returns:
+        merge_condition (ExpressionOrColumn): Merge condition that can be passed to merge() method
+    """
+    primary_key_match = [
+        col(f"target.{column_name}") == col(f"source.{column_name}")
+        for column_name in primary_keys
+    ]
+    merge_condition = primary_key_match[0]
+    for condition in primary_key_match[1:]:
+        merge_condition = merge_condition & condition
+    return merge_condition
+
+
 def write_delta_table_update(
     spark_session: SparkSession,
     path: str,
@@ -154,34 +173,28 @@ def write_delta_table_update(
             # Don't process and dont update watermark
             return
 
-        delta_table = DeltaTable.forPath(spark_session, path)
-        primary_key_match = [
-            col(f"target.{col_name}") == col(f"source.{col_name}") for col_name in primary_keys
-        ]
-        merge_condition = primary_key_match[0]
-        for condition in primary_key_match[1:]:
-            merge_condition = merge_condition & condition
+        target_table = DeltaTable.forPath(spark_session, path)
 
         # Update ('update_preimage' and 'update_postimage') change types are not expected
         # so raising exception if these change types are found.
-        update_df = processed_df.filter(
+        rows_updated = processed_df.where(
             processed_df["_change_type"].isin(
                 [ChangeType.PRE_UPDATE.value, ChangeType.POST_UPDATE.value]
             )
-        )
-        if update_df.count() > 0:
+        ).count()
+        if rows_updated > 0:
             raise ValueError(
                 "DataFrame contains update_preimage or update_postimage _change_type(s). "
                 "Cannot merge data."
             )
 
-        # Delete
-        delete_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.DELETE.value)
-        rows_deleted = delete_src_df.count()
+        # Delete rows from target that are deleted from source
+        delete_df = processed_df.where(processed_df["_change_type"] == ChangeType.DELETE.value)
+        rows_deleted = delete_df.count()
         if rows_deleted:
-            delta_table.alias("target").merge(
-                source=delete_src_df.alias("source"),
-                condition=merge_condition,
+            target_table.alias("target").merge(
+                source=delete_df.alias("source"),
+                condition=merge_by_primary_keys_condition(primary_keys=primary_keys),
             ).whenMatchedDelete().execute()
         send_rows_updated_metric(
             value=rows_deleted,
@@ -189,13 +202,13 @@ def write_delta_table_update(
         )
         logging.info(f"Deleted {rows_deleted} rows from table {table_name} in {path}")
 
-        # Insert
-        insert_src_df = processed_df.where(processed_df["_change_type"] == ChangeType.INSERT.value)
-        rows_inserted = insert_src_df.count()
+        # Insert rows to target that are inserted to source
+        insert_df = processed_df.where(processed_df["_change_type"] == ChangeType.INSERT.value)
+        rows_inserted = insert_df.count()
         if rows_inserted:
-            delta_table.alias("target").merge(
-                source=insert_src_df.alias("source"),
-                condition=merge_condition,
+            target_table.alias("target").merge(
+                source=insert_df.alias("source"),
+                condition=merge_by_primary_keys_condition(primary_keys=primary_keys),
             ).whenNotMatchedInsertAll().execute()
         send_rows_updated_metric(
             value=rows_inserted,
@@ -203,14 +216,14 @@ def write_delta_table_update(
         )
         logging.info(f"Inserted {rows_inserted} rows from table {table_name} in {path}")
     else:
-        # Create empty table if needed
-        target_dt_to_save = processed_df.drop(
+        # Create a new table
+        df = processed_df.drop(
             ReservedColumns.CHANGE.value,
             ReservedColumns.COMMIT.value,
             ReservedColumns.COMMIT_TIME.value,
         )
-        rows_inserted = target_dt_to_save.count()
-        target_dt_to_save.write.format("delta").save(path)
+        rows_inserted = df.count()
+        df.write.format("delta").save(path)
         send_rows_updated_metric(
             value=rows_inserted,
             tags={"table_name": table_name, "operation": "insert", "activity": activity.value},
