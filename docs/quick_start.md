@@ -40,7 +40,7 @@ Now, head to where you checked out the FlowEHR repo on step 1. In that directory
 
 7. Reopen that repo in a DevContainer (you will get a prompt, or alternatively click the bottom left green button, then `Reopen in container`). You are now ready to start developing your pipeline code.
 
-8. To run tests locally, use the Testing tab in VSCode. 
+8. To run tests locally, use the Testing tab in VSCode.
 
 ![Running tests](../assets/RunningTests.png)
 
@@ -54,13 +54,13 @@ Now, you can trigger your updated pipeline. You can do so from the ADF instance.
 
 ![Trigger ADF Pipelines](../assets/TriggerADFPipelines.png)
 
-> Note: There is currently a bug in FlowEHR that means the deployed pipeline code might not get updated when you run the above command. Currently, a workaround for this is to either delete the FlowEHR cluster before you re-deploy the pipeline code, or increase the Python wheel version in [pyproject.toml](../example_transform/pyproject.toml) and [pipeline.json](../example_transform/pipeline.json).
+> Note: There is currently a [bug](https://github.com/UCLH-Foundry/FlowEHR/issues/197) in FlowEHR that means the deployed pipeline code might not get updated when you run the above command. Currently, a workaround for this is to either delete the FlowEHR cluster before you re-deploy the pipeline code, or increase the Python wheel version in [pyproject.toml](../example_transform/pyproject.toml) and [pipeline.json](../example_transform/pipeline.json).
 
 10. You will need to change one setting for the metrics to be displayed correctly. Head to the Application Insights resource deployed in your resource group, it should have a name like `transform-ai-${flowehr_id}-dev`. Head to `Usage and estimated costs`, click on `Custom metrics (preview)`, and make sure custom metrics are sent to Azure with dimensions enabled:
 
 ![Custom Metrics Set Up](/assets/CustomMetricsSetUp.png)
 
-11. Now you can check metrics and logs in Application Insights. To check the logs, head to the Application Insights service created in your resource group, as described in step 2. There, head to the `Logs` section. To see logs created by the pipeline, type `traces`. See screenshot: 
+11. Now you can check metrics and logs in Application Insights. To check the logs, head to the Application Insights service created in your resource group, as described in step 2. There, head to the `Logs` section. To see logs created by the pipeline, type `traces`. See screenshot:
 
 ![Pipeline Logs](/assets/PatientNotesPipelineLogs.png)
 
