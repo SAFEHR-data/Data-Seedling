@@ -3,7 +3,7 @@
 This repository is designed to work with an instance of FlowEHR. To work with Data Pipelines in FlowEHR, you will need to have both the FlowEHR repo and the Data Seedling repo opened in VSCode. This document describes the way to set them up and test your changes in your personal development deployment.
 
 1. Clone the [FlowEHR repo](https://github.com/UCLH-Foundry/FlowEHR) and deploy an instance of FlowEHR following the [steps outlined in the README](https://github.com/UCLH-Foundry/FlowEHR#getting-started).
-Note that the resource group in which almost all resources will be created will have a name that looks like `rg-${flowehr_id}-dev`, e.g. `rg-myflwr-dev`.
+> Note that the resource group in which almost all resources will be created will have a name that looks like `rg-${flowehr_id}-dev`, e.g. `rg-myflwr-dev`.
 
 2. Create a new repository using this template, as shown in the screenshot. Pick a name for your data pipeline repository. Do not clone the repository yet.
 

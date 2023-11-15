@@ -2,13 +2,13 @@
 
 This repository serves as an example Data Pipeline designed to work with [FlowEHR](https://github.com/UCLH-Foundry/FlowEHR).
 
-It showcases the way to write, test, deploy, and run data pipelines in production, and do so with a focus on long-term maintainability.
+It showcases the way to write, test, deploy, and run data pipelines in production, and does so with a focus on long-term maintainability.
 
 ## FlowEHR
 
 FlowEHR is a framework for creating secure data transformation pipelines in Azure. FlowEHR supports authoring multiple data pipelines through multiple repositories and automates the deployment of cloud resources to run these pipelines.
 
-If you don't yet know about FlowEHR, please read [README](https://github.com/UCLH-Foundry/FlowEHR/blob/main/README.md).
+If you don't yet know about FlowEHR, please read [the FlowEHR README](https://github.com/UCLH-Foundry/FlowEHR/blob/main/README.md).
 
 ## Quick Start
 
