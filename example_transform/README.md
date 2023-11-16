@@ -1,6 +1,6 @@
 # Example Transform pipeline
 
-## What is this
+## What is this?
 
 This is an example data pipeline that creates a fake DataFrame, then runs a basic transformation on it and saves the result in the Microsoft SQL database (feature store). It shows you how you can write, test and deploy a basic data transformation using FlowEHR, package data transformation code into a Python wheel, and send metrics and logs to Azure Monitor.
 

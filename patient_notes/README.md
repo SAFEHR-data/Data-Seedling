@@ -1,6 +1,6 @@
 # Text processing pipeline
 
-## What is this
+## What is this?
 
 This is a data pipeline for processing large text datasets for healthcare. It pseudonymizes data and extracts additional data from it using [Microsoft Presidio](https://microsoft.github.io/presidio/) and [Azure Text Analytics for Health](https://learn.microsoft.com/en-us/azure/ai-services/language-service/text-analytics-for-health/overview?tabs=ner). It also shows an approach to writing Spark pipelines in a testable, CI-friendly way that supports efficient incremental data processing.
 
