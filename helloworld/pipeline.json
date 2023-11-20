@@ -1,0 +1,20 @@
+{
+    "name": "HelloWorldPipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "DatabricksPythonActivity",
+                "type": "DatabricksSparkPython",
+                "typeProperties": {
+                    "pythonFile": "dbfs:/pipelines/helloworld/artifacts/helloworld.py"
+                },
+                "linkedServiceName": {
+                    "referenceName": "ADBLinkedServiceViaMSI",
+                    "type": "LinkedServiceReference"
+                }
+            }
+        ],
+        "parameters": {}
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
