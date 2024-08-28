@@ -44,13 +44,13 @@ Tables in Gold contain additional columns as extracted during Feature Extraction
 
 Delta Lake is open-source software that extends Parquet data files with a file-based transaction log for ACID transactions and scalable metadata handling. Delta Tables are natively supported in Azure Databricks, Azure Synapse and the upcoming [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/get-started/microsoft-fabric-overview) platform.
 
-Delta Tables have versioning enabled by default which allows tracking of all updates to the tables. They can also [track row-level changes](https://learn.microsoft.com/en-us/azure/databricks/delta/delta-change-data-feed) which can be read downstream for incremental processing. [Automatic schema validation](https://learn.microsoft.com/en-us/azure/databricks/delta/schema-validation) and [schema evolution](https://docs.databricks.com/delta/update-schema.html) both provide flexibility in managing evolving data schema. For more details, see the [design doc](https://github.com/UCLH-Foundry/Garden-Path/blob/main/designs/data-lake.md) for enabling Data Lake in FlowEHR.
+Delta Tables have versioning enabled by default which allows tracking of all updates to the tables. They can also [track row-level changes](https://learn.microsoft.com/en-us/azure/databricks/delta/delta-change-data-feed) which can be read downstream for incremental processing. [Automatic schema validation](https://learn.microsoft.com/en-us/azure/databricks/delta/schema-validation) and [schema evolution](https://docs.databricks.com/delta/update-schema.html) both provide flexibility in managing evolving data schema. For more details, see the [design doc](https://github.com/SAFEHR-hdata/Garden-Path/blob/main/designs/data-lake.md) for enabling Data Lake in FlowEHR.
 
 ### Unity Catalog 
 
 In addition to being saved in a Storage account as Delta tables, the data in the Gold layer is materialized as an External Table in Databricks Unity Catalog.
 
-Databricks Unity Catalog is optionally enabled during the deployment of FlowEHR (see [this pull request](https://github.com/UCLH-Foundry/FlowEHR/pull/326)). It enables us to save and query tables there directly and use features such as SQL Warehouse and SQL Query Editor in Databricks. Saving Gold tables in Unity Catalogue enables administrators of the system to enable fine-grained permission control on these tables, and simplifies data analysis and discovery.
+Databricks Unity Catalog is optionally enabled during the deployment of FlowEHR (see [this pull request](https://github.com/SAFEHR-hdata/FlowEHR/pull/326)). It enables us to save and query tables there directly and use features such as SQL Warehouse and SQL Query Editor in Databricks. Saving Gold tables in Unity Catalogue enables administrators of the system to enable fine-grained permission control on these tables, and simplifies data analysis and discovery.
 
 ## Processing
 
