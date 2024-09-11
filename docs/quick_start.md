@@ -2,7 +2,7 @@
 
 This repository is designed to work with an instance of FlowEHR. To work with Data Pipelines in FlowEHR, you will need to have both the FlowEHR repo and the Data Seedling repo opened in VSCode. This document describes the way to set them up and test your changes in your personal development deployment.
 
-1. Clone the [FlowEHR repo](https://github.com/UCLH-Foundry/FlowEHR) and deploy an instance of FlowEHR following the [steps outlined in the README](https://github.com/UCLH-Foundry/FlowEHR#getting-started).
+1. Clone the [FlowEHR repo](https://github.com/SAFEHR-hdata/FlowEHR) and deploy an instance of FlowEHR following the [steps outlined in the README](https://github.com/SAFEHR-hdata/FlowEHR#getting-started).
 > Note that the resource group in which almost all resources will be created will have a name that looks like `rg-${flowehr_id}-dev`, e.g. `rg-myflwr-dev`.
 
 2. Create a new repository using this template, as shown in the screenshot. Pick a name for your data pipeline repository. Do not clone the repository yet.
@@ -54,7 +54,7 @@ Now, you can trigger your updated pipeline. You can do so from the ADF instance.
 
 ![Trigger ADF Pipelines](../assets/TriggerADFPipelines.png)
 
-> Note: There is currently a [bug](https://github.com/UCLH-Foundry/FlowEHR/issues/197) in FlowEHR that means the deployed pipeline code might not get updated when you run the above command. Currently, a workaround for this is to either delete the FlowEHR cluster before you re-deploy the pipeline code, or increase the Python wheel version in [pyproject.toml](../example_transform/pyproject.toml) and [pipeline.json](../example_transform/pipeline.json).
+> Note: There is currently a [bug](https://github.com/SAFEHR-hdata/FlowEHR/issues/197) in FlowEHR that means the deployed pipeline code might not get updated when you run the above command. Currently, a workaround for this is to either delete the FlowEHR cluster before you re-deploy the pipeline code, or increase the Python wheel version in [pyproject.toml](../example_transform/pyproject.toml) and [pipeline.json](../example_transform/pipeline.json).
 
 10. You will need to change one setting for the metrics to be displayed correctly. Head to the Application Insights resource deployed in your resource group, it should have a name like `transform-ai-${flowehr_id}-dev`. Head to `Usage and estimated costs`, click on `Custom metrics (preview)`, and make sure custom metrics are sent to Azure with dimensions enabled:
 

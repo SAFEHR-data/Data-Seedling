@@ -6,7 +6,7 @@ environment: dev
 transform:
   spark_version: 3.4
   repositories:
-    - url: https://github.com/UCLH-Foundry/Data-Seedling.git
+    - url: https://github.com/SAFEHR-hdata/Data-Seedling.git
   datalake:
     zones:
       - bronze
